@@ -2,38 +2,26 @@
  * Security Utilities
  *
  * Provides security-related functions for the proxy server.
- * Implementation will be expanded in Phase 4.
+ * Uses the config manager for allowlist/blocklist checking.
  */
 
-import { getConfig } from "../config/manager.js";
+import {
+  isDomainAllowed,
+  isCommandAllowed,
+  extractDomain,
+} from "../config/manager.js";
+import type { ApprovalStatus } from "../config/defaults.js";
 
 /**
  * Checks if a URL is allowed based on configuration
+ * @returns ApprovalStatus indicating if the URL is allowed, blocked, or needs approval
  */
-export function isUrlAllowed(url: string): boolean {
-  const config = getConfig();
-
-  // Check blocked patterns first
-  for (const pattern of config.blockedPatterns) {
-    const regex = new RegExp(pattern, "i");
-    if (regex.test(url)) {
-      return false;
-    }
-  }
-
-  // Check allowed patterns
-  for (const pattern of config.allowedPatterns) {
-    const regex = new RegExp(pattern, "i");
-    if (regex.test(url)) {
-      return true;
-    }
-  }
-
-  return false;
+export async function isUrlAllowed(url: string): Promise<ApprovalStatus> {
+  return isDomainAllowed(url);
 }
 
 /**
- * Checks if a URL points to localhost
+ * Checks if a URL points to localhost or private network
  */
 export function isLocalhostUrl(url: string): boolean {
   try {
@@ -43,6 +31,7 @@ export function isLocalhostUrl(url: string): boolean {
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
       hostname === "::1" ||
+      hostname === "[::1]" ||
       hostname.endsWith(".localhost")
     );
   } catch {
@@ -51,18 +40,73 @@ export function isLocalhostUrl(url: string): boolean {
 }
 
 /**
- * Validates that a request meets security requirements
+ * Checks if a URL points to a private IP range
  */
-export function validateRequest(url: string): { valid: boolean; error?: string } {
-  const config = getConfig();
+export function isPrivateIp(url: string): boolean {
+  const domain = extractDomain(url);
 
-  if (!isUrlAllowed(url)) {
-    return { valid: false, error: "URL is not allowed by configuration" };
+  // Check common private ranges
+  const privatePatterns = [
+    /^10\./,
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+    /^127\./,
+  ];
+
+  return privatePatterns.some((pattern) => pattern.test(domain));
+}
+
+/**
+ * Validates that a request URL meets security requirements
+ * @returns Object with status and optional error message
+ */
+export async function validateRequest(
+  url: string
+): Promise<{ status: ApprovalStatus; error?: string }> {
+  const status = await isDomainAllowed(url);
+
+  if (status === "BLOCKED") {
+    const domain = extractDomain(url);
+    return {
+      status: "BLOCKED",
+      error: `Domain "${domain}" is blocked for security reasons`,
+    };
   }
 
-  if (isLocalhostUrl(url) && !config.allowLocalhost) {
-    return { valid: false, error: "Localhost connections are not allowed" };
+  if (status === "NEEDS_APPROVAL") {
+    const domain = extractDomain(url);
+    return {
+      status: "NEEDS_APPROVAL",
+      error: `Domain "${domain}" requires approval`,
+    };
   }
 
-  return { valid: true };
+  return { status: "ALLOWED" };
+}
+
+/**
+ * Validates that a command meets security requirements
+ * @returns Object with status and optional error message
+ */
+export async function validateCommand(
+  command: string
+): Promise<{ status: ApprovalStatus; error?: string }> {
+  const status = await isCommandAllowed(command);
+
+  if (status === "BLOCKED") {
+    return {
+      status: "BLOCKED",
+      error: `Command is blocked for security reasons`,
+    };
+  }
+
+  if (status === "NEEDS_APPROVAL") {
+    return {
+      status: "NEEDS_APPROVAL",
+      error: `Command requires approval`,
+    };
+  }
+
+  return { status: "ALLOWED" };
 }
