@@ -15,6 +15,11 @@ import {
   networkExecToolDefinition,
   type NetworkExecInput,
 } from "./tools/network-exec.js";
+import {
+  readFile,
+  readFileToolDefinition,
+  type ReadFileInput,
+} from "./tools/read-file.js";
 
 const server = new Server(
   {
@@ -31,7 +36,7 @@ const server = new Server(
 // List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [proxyFetchToolDefinition, networkExecToolDefinition],
+    tools: [proxyFetchToolDefinition, networkExecToolDefinition, readFileToolDefinition],
   };
 });
 
@@ -58,6 +63,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     case "network_exec": {
       const input = args as unknown as NetworkExecInput;
       const result = await networkExec(input);
+
+      // Format response as MCP tool result
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "read_file": {
+      const input = args as unknown as ReadFileInput;
+      const result = await readFile(input);
 
       // Format response as MCP tool result
       return {
