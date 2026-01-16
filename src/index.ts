@@ -5,6 +5,11 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import {
+  proxyFetch,
+  proxyFetchToolDefinition,
+  type ProxyFetchInput,
+} from "./tools/proxy-fetch.js";
 
 const server = new Server(
   {
@@ -18,15 +23,36 @@ const server = new Server(
   }
 );
 
-// Tool handlers will be added in later phases
+// List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [],
+    tools: [proxyFetchToolDefinition],
   };
 });
 
+// Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  throw new Error(`Unknown tool: ${request.params.name}`);
+  const { name, arguments: args } = request.params;
+
+  switch (name) {
+    case "proxy_fetch": {
+      const input = args as unknown as ProxyFetchInput;
+      const result = await proxyFetch(input);
+
+      // Format response as MCP tool result
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    default:
+      throw new Error(`Unknown tool: ${name}`);
+  }
 });
 
 async function main() {
