@@ -10,15 +10,7 @@ Claude Desktop runs in a restricted sandbox that blocks many network operations 
 
 ## Installation
 
-### Local Development
-
-```bash
-cd /path/to/claude-desktop-proxy
-npm install
-npm run build
-```
-
-### Claude Desktop Configuration
+### Quick Install (via GitHub)
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
@@ -26,14 +18,36 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "proxy": {
-      "command": "node",
-      "args": ["/Users/kk/Sites/startups/claude-desktop-proxy/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "github:CodefiLabs/claude-desktop-skills-proxy"]
     }
   }
 }
 ```
 
-After editing, restart Claude Desktop for changes to take effect.
+Restart Claude Desktop for changes to take effect. The server will be automatically downloaded and run.
+
+### Local Development
+
+```bash
+git clone https://github.com/CodefiLabs/claude-desktop-skills-proxy.git
+cd claude-desktop-skills-proxy
+npm install
+npm run build
+```
+
+Then configure Claude Desktop to use the local build:
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "node",
+      "args": ["/path/to/claude-desktop-skills-proxy/dist/index.js"]
+    }
+  }
+}
+```
 
 ## Tools
 
