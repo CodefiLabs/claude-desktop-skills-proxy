@@ -77,6 +77,21 @@ export const DEFAULT_BLOCKED_DOMAINS: string[] = [
   // Kubernetes internal
   "10.0.0.*",
   "10.96.*",
+
+  // IPv6 loopback (already have ::1 and [::1] above)
+  // IPv6 link-local addresses
+  "fe80:*",
+  "[fe80:*",
+
+  // IPv6 unique local addresses (private IPv6)
+  "fc00:*",
+  "[fc00:*",
+  "fd00:*",
+  "[fd00:*",
+
+  // IPv6-mapped IPv4 addresses (can be used to bypass IPv4 blocks)
+  "::ffff:*",
+  "[::ffff:*",
 ];
 
 /**

@@ -14,6 +14,7 @@ import {
   isCommandAllowed,
   addCommandToAllowlist,
 } from "../config/manager.js";
+import { checkRateLimit } from "../utils/rate-limiter.js";
 
 /**
  * Maximum output size (1MB each for stdout/stderr)
@@ -41,6 +42,22 @@ const DANGEROUS_PATTERNS = [
   "`",      // Backtick command substitution
   "${",     // Variable expansion
 ];
+
+/**
+ * Path traversal patterns that are suspicious in cwd or arguments
+ */
+const PATH_TRAVERSAL_PATTERNS = [
+  /\.\.\//, // Parent directory traversal
+  /\.\.\\/, // Windows parent directory traversal
+  /^~\//,   // Home directory (could expose sensitive paths)
+];
+
+/**
+ * Validates a path doesn't contain traversal attempts
+ */
+function containsPathTraversal(value: string): boolean {
+  return PATH_TRAVERSAL_PATTERNS.some((pattern) => pattern.test(value));
+}
 
 /**
  * Input parameters for the network_exec tool
@@ -206,6 +223,16 @@ export async function networkExec(
 
     console.error(`[network_exec] Request: ${input.command} ${(input.args || []).join(" ")}`);
 
+    // Step 1b: Check rate limit
+    const rateLimitResult = checkRateLimit(`exec:${commandLower}`);
+    if (!rateLimitResult.allowed) {
+      console.error(`[network_exec] Rate limited for command: ${commandLower}`);
+      return {
+        status: "error",
+        error: `Rate limit exceeded for command "${commandLower}". Please wait ${Math.ceil((rateLimitResult.retryAfterMs || 0) / 1000)} seconds before retrying.`,
+      };
+    }
+
     // Step 2: Validate command itself doesn't contain dangerous patterns
     const commandDanger = containsDangerousPatterns(input.command);
     if (commandDanger) {
@@ -224,6 +251,15 @@ export async function networkExec(
       return {
         status: "error",
         error: argsValidation.error,
+      };
+    }
+
+    // Step 3b: Validate cwd for path traversal
+    if (input.cwd && containsPathTraversal(input.cwd)) {
+      console.error(`[network_exec] BLOCKED: Path traversal in cwd: ${input.cwd}`);
+      return {
+        status: "error",
+        error: `Working directory "${input.cwd}" contains path traversal patterns which are not allowed for security reasons. Use absolute paths instead.`,
       };
     }
 

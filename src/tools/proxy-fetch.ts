@@ -10,6 +10,7 @@ import {
   addDomainToAllowlist,
   extractDomain,
 } from "../config/manager.js";
+import { checkRateLimit } from "../utils/rate-limiter.js";
 
 /**
  * Maximum response body size (10MB)
@@ -182,6 +183,16 @@ export async function proxyFetch(
     const domain = extractDomain(input.url);
 
     console.error(`[proxy_fetch] Request to ${domain}: ${input.method || "GET"} ${input.url}`);
+
+    // Step 1b: Check rate limit
+    const rateLimitResult = checkRateLimit(`fetch:${domain}`);
+    if (!rateLimitResult.allowed) {
+      console.error(`[proxy_fetch] Rate limited for domain: ${domain}`);
+      return {
+        status: "error",
+        error: `Rate limit exceeded for domain "${domain}". Please wait ${Math.ceil((rateLimitResult.retryAfterMs || 0) / 1000)} seconds before retrying.`,
+      };
+    }
 
     // Step 2: Check domain against allowlist/blocklist
     const approvalStatus = await isDomainAllowed(parsedUrl.href);
