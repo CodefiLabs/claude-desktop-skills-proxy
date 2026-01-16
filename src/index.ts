@@ -10,6 +10,11 @@ import {
   proxyFetchToolDefinition,
   type ProxyFetchInput,
 } from "./tools/proxy-fetch.js";
+import {
+  networkExec,
+  networkExecToolDefinition,
+  type NetworkExecInput,
+} from "./tools/network-exec.js";
 
 const server = new Server(
   {
@@ -26,7 +31,7 @@ const server = new Server(
 // List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [proxyFetchToolDefinition],
+    tools: [proxyFetchToolDefinition, networkExecToolDefinition],
   };
 });
 
@@ -38,6 +43,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     case "proxy_fetch": {
       const input = args as unknown as ProxyFetchInput;
       const result = await proxyFetch(input);
+
+      // Format response as MCP tool result
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+
+    case "network_exec": {
+      const input = args as unknown as NetworkExecInput;
+      const result = await networkExec(input);
 
       // Format response as MCP tool result
       return {
