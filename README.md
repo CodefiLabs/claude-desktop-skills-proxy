@@ -2,10 +2,11 @@
 
 MCP server that bypasses Claude Desktop sandbox network restrictions.
 
-Claude Desktop runs in a restricted sandbox that blocks many network operations and CLI tools that need internet access. This MCP server provides two tools that run outside the sandbox, enabling Claude to:
+Claude Desktop runs in a restricted sandbox that blocks many network operations and CLI tools that need internet access. This MCP server provides three tools that run outside the sandbox, enabling Claude to:
 
 - Fetch any URL (API calls, web scraping, downloads)
 - Execute network-capable CLI tools (yt-dlp, curl, ffmpeg, etc.)
+- Read files created by those tools (subtitle files, downloads, etc.)
 
 ## Installation
 
@@ -120,6 +121,50 @@ Execute CLI commands that require network access. Uses secure `spawn()` instead 
   "timeout": 300000
 }
 ```
+
+### read_file
+
+Read files from the host filesystem. Useful for reading files created by `network_exec` (e.g., subtitle files from yt-dlp).
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `path` | string | Yes | Absolute path to the file to read |
+| `encoding` | string | No | "utf8" (default) or "base64" for binary files |
+| `maxSize` | number | No | Maximum file size in bytes (default: 5MB) |
+
+**Example - Read subtitle file:**
+```json
+{
+  "path": "/tmp/video.en.vtt"
+}
+```
+
+**Example - Read binary file as base64:**
+```json
+{
+  "path": "/tmp/image.png",
+  "encoding": "base64"
+}
+```
+
+**Workflow for yt-dlp subtitles:**
+1. Download subtitles with `network_exec`:
+   ```json
+   {
+     "command": "yt-dlp",
+     "args": ["--write-auto-sub", "--skip-download", "-o", "/tmp/%(id)s", "VIDEO_ID"],
+     "approve": "always"
+   }
+   ```
+2. Read the subtitle file with `read_file`:
+   ```json
+   {
+     "path": "/tmp/VIDEO_ID.en.vtt"
+   }
+   ```
+
+**Blocked paths:** Sensitive files like `~/.ssh/*`, `~/.aws/*`, `/etc/shadow`, `.env` files, and credential files are blocked for security.
 
 ## Approval Flow
 
