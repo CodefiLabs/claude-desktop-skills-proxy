@@ -1,0 +1,35 @@
+{
+  "name": "mcp-proxy",
+  "version": "0.1.0",
+  "description": "MCP proxy server to bypass sandbox network restrictions for Claude skills",
+  "type": "module",
+  "bin": {
+    "mcp-proxy": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && shx chmod +x dist/*.js",
+    "prepare": "npm run build",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "shx": "^0.3.4",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "proxy",
+    "claude",
+    "model-context-protocol"
+  ],
+  "license": "MIT"
+}
