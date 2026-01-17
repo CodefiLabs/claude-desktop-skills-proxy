@@ -6,6 +6,24 @@
  */
 
 /**
+ * Configuration for the file server feature
+ */
+export interface FileServerConfig {
+  /** Whether the file server feature is enabled */
+  enabled: boolean;
+  /** Port for the local HTTP server */
+  port: number;
+  /** Directory where files are served from */
+  serveDirectory: string;
+  /** Maximum file size in bytes */
+  maxFileSize: number;
+  /** Default expiry time in minutes for served files */
+  defaultExpiryMinutes: number;
+  /** File extensions allowed to be served */
+  allowedExtensions: string[];
+}
+
+/**
  * Configuration structure for the MCP proxy server
  */
 export interface ProxyConfig {
@@ -17,6 +35,8 @@ export interface ProxyConfig {
   allowedCommands: string[];
   /** Commands that are always blocked (security) */
   blockedCommands: string[];
+  /** File server configuration */
+  fileServer?: FileServerConfig;
 }
 
 /**
@@ -174,5 +194,32 @@ export function createDefaultConfig(): ProxyConfig {
     blockedDomains: [...DEFAULT_BLOCKED_DOMAINS],
     allowedCommands: [],
     blockedCommands: [...DEFAULT_BLOCKED_COMMANDS],
+    fileServer: { ...DEFAULT_FILE_SERVER_CONFIG },
   };
 }
+
+/**
+ * Default file server configuration
+ */
+export const DEFAULT_FILE_SERVER_CONFIG: FileServerConfig = {
+  enabled: true,
+  port: 8765,
+  serveDirectory: "/tmp/mcp-proxy-files",
+  maxFileSize: 104857600, // 100MB
+  defaultExpiryMinutes: 60,
+  allowedExtensions: [
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "webp",
+    "svg",
+    "mp4",
+    "webm",
+    "mp3",
+    "wav",
+    "pdf",
+    "json",
+    "txt",
+  ],
+};

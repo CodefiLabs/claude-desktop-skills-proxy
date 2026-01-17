@@ -12,7 +12,9 @@ import {
   createDefaultConfig,
   DEFAULT_BLOCKED_COMMANDS,
   DEFAULT_BLOCKED_DOMAINS,
+  DEFAULT_FILE_SERVER_CONFIG,
   type ApprovalStatus,
+  type FileServerConfig,
   type ProxyConfig,
 } from "./defaults.js";
 
@@ -63,6 +65,9 @@ export async function loadConfig(): Promise<ProxyConfig> {
         DEFAULT_BLOCKED_COMMANDS,
         parsed.blockedCommands ?? []
       ),
+      fileServer: parsed.fileServer
+        ? { ...DEFAULT_FILE_SERVER_CONFIG, ...parsed.fileServer }
+        : { ...DEFAULT_FILE_SERVER_CONFIG },
     };
 
     console.error(`[config] Loaded configuration from ${CONFIG_FILE}`);
@@ -332,4 +337,13 @@ function mergeUnique<T>(arr1: T[], arr2: T[]): T[] {
  */
 export function clearConfigCache(): void {
   currentConfig = null;
+}
+
+/**
+ * Gets the file server configuration
+ * Returns defaults if not configured
+ */
+export async function getFileServerConfig(): Promise<FileServerConfig> {
+  const config = await getConfig();
+  return config.fileServer ?? DEFAULT_FILE_SERVER_CONFIG;
 }
