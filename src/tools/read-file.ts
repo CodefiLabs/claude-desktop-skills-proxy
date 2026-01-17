@@ -1,5 +1,5 @@
 import * as fs from "fs/promises";
-import * as path from "path";
+import { isBlockedPath } from "../utils/file-blocklist.js";
 
 export interface ReadFileInput {
   path: string;
@@ -16,40 +16,7 @@ export interface ReadFileResult {
   error?: string;
 }
 
-// Sensitive paths that should never be read
-const BLOCKED_PATHS = [
-  /^\/etc\/shadow$/,
-  /^\/etc\/passwd$/,
-  /^\/etc\/sudoers/,
-  /^\/etc\/ssh\//,
-  /\/\.ssh\//,
-  /\/\.aws\//,
-  /\/\.gnupg\//,
-  /\/\.config\/gcloud\//,
-  /\/\.kube\/config$/,
-  /\/\.npmrc$/,
-  /\/\.netrc$/,
-  /\/\.env$/,
-  /\/\.env\./,
-  /\/credentials\.json$/,
-  /\/service[_-]?account.*\.json$/i,
-  /\/token\.json$/,
-];
-
 const DEFAULT_MAX_SIZE = 5 * 1024 * 1024; // 5MB
-
-function isBlockedPath(filePath: string): boolean {
-  const normalized = path.normalize(filePath);
-  const resolved = path.resolve(filePath);
-
-  for (const pattern of BLOCKED_PATHS) {
-    if (pattern.test(normalized) || pattern.test(resolved)) {
-      return true;
-    }
-  }
-
-  return false;
-}
 
 export async function readFile(input: ReadFileInput): Promise<ReadFileResult> {
   const { path: filePath, encoding = "utf8", maxSize = DEFAULT_MAX_SIZE } = input;

@@ -20,6 +20,17 @@ import {
   readFileToolDefinition,
   type ReadFileInput,
 } from "./tools/read-file.js";
+import {
+  fileServe,
+  fileServeToolDefinition,
+  type FileServeInput,
+  fileServerStatus,
+  fileServerStatusToolDefinition,
+  fileServeCleanup,
+  fileServeCleanupToolDefinition,
+  type FileServeCleanupInput,
+  shutdownFileServer,
+} from "./tools/file-server.js";
 
 const server = new Server(
   {
@@ -36,7 +47,14 @@ const server = new Server(
 // List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: [proxyFetchToolDefinition, networkExecToolDefinition, readFileToolDefinition],
+    tools: [
+      proxyFetchToolDefinition,
+      networkExecToolDefinition,
+      readFileToolDefinition,
+      fileServeToolDefinition,
+      fileServerStatusToolDefinition,
+      fileServeCleanupToolDefinition,
+    ],
   };
 });
 
@@ -90,9 +108,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
 
+    case "file_serve": {
+      const input = args as unknown as FileServeInput;
+      const result = await fileServe(input);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+
+    case "file_server_status": {
+      const result = await fileServerStatus();
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+
+    case "file_serve_cleanup": {
+      const input = args as unknown as FileServeCleanupInput;
+      const result = await fileServeCleanup(input);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
+});
+
+// Shutdown handlers for clean exit
+process.on("SIGINT", () => {
+  shutdownFileServer();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  shutdownFileServer();
+  process.exit(0);
 });
 
 async function main() {
