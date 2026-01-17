@@ -6,7 +6,7 @@ import * as http from "node:http";
 import * as fs from "node:fs";
 import { getFileRegistry } from "./file-registry.js";
 
-const DEFAULT_PORT = 8765;
+const DEFAULT_PORT = 9765;
 
 class HttpFileServer {
   private server: http.Server | null = null;

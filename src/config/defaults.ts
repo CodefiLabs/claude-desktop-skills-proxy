@@ -176,6 +176,32 @@ export const DEFAULT_BLOCKED_COMMANDS: string[] = [
 ];
 
 /**
+ * Default file server configuration
+ */
+export const DEFAULT_FILE_SERVER_CONFIG: FileServerConfig = {
+  enabled: true,
+  port: 9765,
+  serveDirectory: "/tmp/mcp-proxy-files",
+  maxFileSize: 104857600, // 100MB
+  defaultExpiryMinutes: 60,
+  allowedExtensions: [
+    "png",
+    "jpg",
+    "jpeg",
+    "gif",
+    "webp",
+    "svg",
+    "mp4",
+    "webm",
+    "mp3",
+    "wav",
+    "pdf",
+    "json",
+    "txt",
+  ],
+};
+
+/**
  * Default configuration with empty allowlists and security blocklists
  */
 export const defaultConfig: ProxyConfig = {
@@ -197,29 +223,3 @@ export function createDefaultConfig(): ProxyConfig {
     fileServer: { ...DEFAULT_FILE_SERVER_CONFIG },
   };
 }
-
-/**
- * Default file server configuration
- */
-export const DEFAULT_FILE_SERVER_CONFIG: FileServerConfig = {
-  enabled: true,
-  port: 8765,
-  serveDirectory: "/tmp/mcp-proxy-files",
-  maxFileSize: 104857600, // 100MB
-  defaultExpiryMinutes: 60,
-  allowedExtensions: [
-    "png",
-    "jpg",
-    "jpeg",
-    "gif",
-    "webp",
-    "svg",
-    "mp4",
-    "webm",
-    "mp3",
-    "wav",
-    "pdf",
-    "json",
-    "txt",
-  ],
-};
